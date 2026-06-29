@@ -1,6 +1,6 @@
 
 Analytics-SDK
-The Application
+
 The application I built is a classic, full-fledged Full-Stack project that combines both worlds: the client-side (Frontend) and the server-side (Backend), along with a database. It is a task management application integrated with a portal that serves as an analytics dashboard for user activities.
 
 The SDK is the core software component I developed. It is a standalone file that can be embedded into any website with just a few lines of code. It functions as a smart intermediary layer that manages background data collection without overloading the website's performance.
@@ -11,6 +11,8 @@ Without Batching: Every click, scroll, and movement on the site triggers an imme
 
 With Batching: The SDK ensures events are not sent individually. It opens a "mailbox" (an in-memory array), collects the events inside, and only when the mailbox is full (e.g., reaches 10 events) or after 5 seconds have passed, it packs everything into a single payload and sends it to the server in one go.
 
+
+
 2. Offline Support
 In the real world, users' internet connections aren't always stable—trains go through tunnels, campus Wi-Fi drops momentarily, or cellular reception weakens.
 
@@ -18,12 +20,17 @@ Without Offline Support: If a user creates a task while disconnected, the analyt
 
 With Offline Support: The SDK constantly listens to the browser's network status. The moment it detects a disconnection, it halts network requests to prevent failures while ensuring no data is lost. This is where the third component comes into play—the Cache.
 
+
+
 3. Cache
 A cache is a fast, temporary storage space. In the context of this SDK, it utilizes the browser's localStorage (a micro-database built into the user's browser).
 
 Going Offline: The moment the SDK detects that the user is offline, it takes the event bundle (the batch) and, instead of sending it over the network, writes it into localStorage. The data is securely locked there, even if the user closes the browser tab!
 
 The Flush Mechanism: As soon as the internet connection is restored (Online), the SDK automatically wakes up, accesses the local cache, retrieves all the events accumulated during the downtime, and sends them orderly to MongoDB. The cache is then cleared, providing a seamless experience where the user never even noticed a disconnection.
+
+
+
 
 The Server-Side & Management Portal
 The Backend engine receives the data bundles from the SDK, validates them using a unique X-API-KEY, and records them in the database.
