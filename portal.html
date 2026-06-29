@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics Advanced Management Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }
+        h1 { color: #38bdf8; margin: 0; font-size: 24px; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background-color: #1e293b; padding: 20px; border-radius: 10px; text-align: center; border-left: 4px solid #38bdf8; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .stat-card h3 { margin: 0; font-size: 14px; color: #94a3b8; text-transform: uppercase; }
+        .stat-card p { margin: 10px 0 0; font-size: 28px; font-weight: bold; color: #f1f5f9; }
+        .charts-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .chart-container { background-color: #1e293b; padding: 20px; border-radius: 10px; min-height: 340px; position: relative; }
+        .chart-container h2 { font-size: 16px; margin-top: 0; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 15px; }
+        .table-section { background-color: #1e293b; padding: 20px; border-radius: 10px; margin-bottom: 25px; }
+        .table-section h2 { font-size: 16px; margin-top: 0; color: #38bdf8; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: right; }
+        th, td { padding: 12px; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; font-weight: 600; }
+        tr:hover { background-color: #24334d; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; }
+        .badge-created { background-color: #0369a1; color: #e0f2fe; }
+        .badge-completed { background-color: #15803d; color: #dcfce7; }
+        #connectionStatus { font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-header">
+        <h1>לוח בקרה אנליטי מתקדם (Real-time Enterprise Portal)</h1>
+        <div id="connectionStatus" style="color: #4ade80; font-weight: bold;">● מחובר לשרת בלייב</div>
+    </div>
+
+    <div class="grid-container">
+        <div class="stat-card" style="border-left-color: #38bdf8;">
+            <h3>סה"כ משימות שנוצרו (Funnel Top)</h3>
+            <p id="funnelCreated">0</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #4ade80;">
+            <h3>סה"כ משימות שהושלמו (Funnel End)</h3>
+            <p id="funnelCompleted">0</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #fbbf24;">
+            <h3>אחוז המרה כללי (Conversion)</h3>
+            <p id="conversionRate">0%</p>
+        </div>
+        <div class="stat-card" style="border-left-color: #f43f5e;">
+            <h3>זמן ביצוע ממוצע למשימה</h3>
+            <p id="avgDuration">0 שניות</p>
+        </div>
+    </div>
+
+    <div class="charts-section">
+        <div class="chart-container">
+            <h2>התפלגות פעילות המשתמשים לפי שעות (Hourly Distribution)</h2>
+            <div style="height: 260px; position: relative;">
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container">
+            <h2>התפלגות אירועים כללית (Event Distribution)</h2>
+            <div style="height: 260px; position: relative;">
+                <canvas id="eventChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h2>זרם אירועים בזמן אמת (Live Events Stream)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>זמן</th>
+                    <th>סוג אירוע</th>
+                    <th>מזהה משתמש</th>
+                    <th>שם משימה</th>
+                    <th>שפה</th>
+                    <th>רזולוציה</th>
+                </tr>
+            </thead>
+            <tbody id="liveLogTable">
+                <tr><td colspan="6" style="text-align:center; color:#64748b;">מחכה לאירועים מה-SDK...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const serverUrl = "http://127.0.0.1:5000";
+        let eventChart = null;
+        let hourlyChart = null;
+
+        async function fetchDashboardData() {
+            try {
+                // 1. משיכת נתוני משפך וזמן ביצוע ממוצע
+                const advancedRes = await fetch(`http://127.0.0.1:5000/api/v1/projects/productivity_app_2026/advanced-analytics`);
+                const advancedData = await advancedRes.json();
+                if(advancedData.success) {
+                    document.getElementById('funnelCreated').innerText = advancedData.funnel.created;
+                    document.getElementById('funnelCompleted').innerText = advancedData.funnel.completed;
+                    document.getElementById('conversionRate').innerText = advancedData.funnel.conversionRate + "%";
+                    document.getElementById('avgDuration').innerText = advancedData.avgDurationText || "0 שניות";
+                }
+
+                // 2. משיכת נתונים עבור גרף העוגה
+                const statsRes = await fetch(`http://127.0.0.1:5000/api/v1/projects/productivity_app_2026/stats`);
+                const statsData = await statsRes.json();
+                if(statsData.success) {
+                    renderEventChart(statsData.stats);
+                }
+
+                // 3. משיכת נתונים עבור גרף פעילות לפי שעות
+                const hourlyRes = await fetch(`http://127.0.0.1:5000/api/v1/projects/productivity_app_2026/hourly-distribution`);
+                const hourlyData = await hourlyRes.json();
+                if(hourlyData.success) {
+                    renderHourlyChart(hourlyData.hourly);
+                }
+
+                // 4. טעינת היסטוריית לוגים ראשונית לטבלה
+                const eventsRes = await fetch(`http://127.0.0.1:5000/api/v1/projects/productivity_app_2026/events`);
+                const events = await eventsRes.json();
+                if(Array.isArray(events) && events.length > 0) {
+                    const tbody = document.getElementById('liveLogTable');
+                    tbody.innerHTML = '';
+                    events.forEach(e => appendEventToTable(e, false));
+                }
+
+            } catch (err) {
+                console.error("Error updating dashboard view:", err);
+            }
+        }
+
+        function renderEventChart(stats) {
+            const ctx = document.getElementById('eventChart').getContext('2d');
+            const labels = Object.keys(stats);
+            const data = Object.values(stats);
+
+            if(eventChart) {
+                eventChart.data.labels = labels;
+                eventChart.data.datasets[0].data = data;
+                eventChart.update();
+            } else {
+                eventChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: ['#38bdf8', '#4ade80', '#fbbf24', '#f43f5e'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderHourlyChart(hourlyArray) {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+            const labels = hourlyArray.map(h => h.hour);
+            const data = hourlyArray.map(h => h.count);
+
+            if(hourlyChart) {
+                hourlyChart.data.labels = labels;
+                hourlyChart.data.datasets[0].data = data;
+                hourlyChart.update();
+            } else {
+                hourlyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'אירועים',
+                            data: data,
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 1 } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function appendEventToTable(event, isPrepend = true) {
+            const tbody = document.getElementById('liveLogTable');
+            if (tbody.rows.length === 1 && tbody.rows[0].cells.length === 1) {
+                tbody.innerHTML = '';
+            }
+
+            const tr = document.createElement('tr');
+            const time = new Date(event.timestamp).toLocaleTimeString('he-IL');
+            const badgeClass = event.eventName === 'task_created' ? 'badge-created' : 'badge-completed';
+            
+            tr.innerHTML = `
+                <td>${time}</td>
+                <td><span class="badge ${badgeClass}">${event.eventName}</span></td>
+                <td style="color:#94a3b8;">${event.userId}</td>
+                <td><strong>${event.properties?.task_name || 'ללא שדה'}</strong></td>
+                <td>${event.metadata?.language || 'he-IL'}</td>
+                <td style="color:#64748b;">${event.metadata?.screenResolution || '1920x1080'}</td>
+            `;
+
+            if(isPrepend) tbody.insertBefore(tr, tbody.firstChild);
+            else tbody.appendChild(tr);
+        }
+
+        const socket = io(serverUrl);
+        
+        socket.on('connect', () => {
+            document.getElementById('connectionStatus').innerText = "● מחובר לשרת בלייב";
+            document.getElementById('connectionStatus').style.color = "#4ade80";
+        });
+
+        socket.on('disconnect', () => {
+            document.getElementById('connectionStatus').innerText = "○ מנותק מהשרת";
+            document.getElementById('connectionStatus').style.color = "#f43f5e";
+        });
+
+        socket.on(`new-event:productivity_app_2026`, (event) => {
+            appendEventToTable(event, true);
+            fetchDashboardData();
+        });
+
+        window.addEventListener('DOMContentLoaded', fetchDashboardData);
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Hub & Analytics Test</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a2e; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background-color: #162447; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 100%; max-width: 500px; text-align: center; }
+        h1 { color: #e43f5a; margin-bottom: 20px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 16px; }
+        button { background-color: #e43f5a; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #ff4a68; }
+        ul { list-style-type: none; padding: 0; text-align: right; }
+        li { background-color: #1f4068; padding: 12px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #00b4d8; }
+        .complete-btn { background-color: #00b4d8; color: white; border: none; padding: 5px 10px; font-size: 14px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .status-badge { margin-top: 15px; font-size: 14px; color: #00b4d8; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>הפרודוקטיביות שלי</h1>
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="הוסף משימה חדשה...">
+            <button onclick="addNewTask()">הוסף</button>
+        </div>
+        <ul id="taskList"></ul>
+        <div class="status-badge" id="networkStatus">סטטוס רשת: מחובר (Online)</div>
+    </div>
+
+    <script src="analytics-sdk.js"></script>
+    <script>
+        const projectId = "productivity_app_2026";
+
+        analytics.init("my_secret_api_key_123", projectId);
+        analytics.setUserId("user_ido_katz");
+
+        function updateNetworkStatus() {
+            const statusDiv = document.getElementById('networkStatus');
+            if (navigator.onLine) {
+                statusDiv.innerText = "סטטוס רשת: מחובר (Online)";
+                statusDiv.style.color = "#00b4d8";
+            } else {
+                statusDiv.innerText = "סטטוס רשת: מנותק (Offline) - אירועים נשמרים ב-Cache";
+                statusDiv.style.color = "#ff4a68";
+            }
+        }
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        async function loadActiveTasksFromDB() {
+            try {
+                const res = await fetch(`http://127.0.0.1:5000/api/v1/projects/${projectId}/active-tasks`);
+                const data = await res.json();
+                if (data.success && Array.isArray(data.tasks)) {
+                    const ul = document.getElementById('taskList');
+                    ul.innerHTML = '';
+                    data.tasks.forEach(task => {
+                        renderTaskOnScreen(task.name, task.difficulty);
+                    });
+                }
+            } catch (err) {
+                console.error("[App] שגיאה בשליפת משימות:", err);
+            }
+        }
+
+        function renderTaskOnScreen(text, difficulty) {
+            const ul = document.getElementById('taskList');
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span>${text} <small style="color:#aaa;">(${difficulty})</small></span>
+                <button class="complete-btn" onclick="completeTask(this, '${text}', '${difficulty}')">סיום</button>
+            `;
+            ul.appendChild(li);
+        }
+
+        function addNewTask() {
+            const input = document.getElementById('taskInput');
+            const taskText = input.value.trim();
+            if (!taskText) return;
+
+            const difficulties = ['קל', 'בינוני', 'קשה'];
+            const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+
+            analytics.trackEvent("task_created", {
+                task_name: taskText,
+                difficulty: randomDifficulty
+            });
+
+            renderTaskOnScreen(taskText, randomDifficulty);
+            input.value = '';
+        }
+
+        function completeTask(btn, text, difficulty) {
+            analytics.trackEvent("task_completed", {
+                task_name: text,
+                difficulty: difficulty
+            });
+            btn.parentElement.remove();
+        }
+
+        window.addEventListener('DOMContentLoaded', loadActiveTasksFromDB);
+    </script>
+</body>
+</html>
