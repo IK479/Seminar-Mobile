@@ -1,5 +1,6 @@
 
 Analytics-SDK
+
 The application I built is a classic, full-featured Full-Stack project that integrates both worlds: the Client-Side (Frontend) and the Server-Side (Backend), along with a database. It is a task management application featuring a management portal that serves as an analytics dashboard for user activities.
 
 The SDK is the core software component I developed. It is a standalone script/file that can be embedded into any website using just a few lines of code. It acts as an intelligent middleware layer that manages background data collection without adding overhead to the host website's performance.
