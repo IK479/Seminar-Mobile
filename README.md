@@ -113,39 +113,26 @@ All backend routes are hosted under the base URL pipeline: `http://localhost:500
 | `GET` | `/projects/:projectId/hourly-distribution` | No |
 
 
+## Interface Function Types (Public vs. Private SDK Methods)
 
-## System Sequence Diagram
-```mermaid
-sequenceDiagram
-    autonumber
-    actor App as Developer App
-    participant SDK as Client SDK
-    participant DB as LocalStorage
-    participant API as Server API
-    participant Portal as Developer Portal
+The Client SDK architecture strictly isolates its external integration interface from internal lifecycle management routines.
 
-    App->>SDK: trackEvent("init")
-    SDK->>SDK: Check Network Status
-    
-    alt Device is Online
-        SDK->>API: POST /api/v1/events (Single/Batch)
-        API-->>SDK: 201 Created
-        API)->>Portal: io.emit("new-event")
-    else Device is Offline
-        SDK->>DB: saveToCache(event)
-    end
+### 1. Public API Methods
+These methods are safely exposed on the global `analytics` instance for host application integration.
 
-    Note over SDK, DB: When network connection is restored...
-    SDK->>SDK: window:online Detected
-    SDK->>DB: flushCache()
-    DB-->>SDK: Read Array & Clear Cache
-    SDK->>API: POST /api/v1/events (Bulk JSON Payload)
-    API)->>Portal: io.emit("bulk-sync")
+| Method Signature | Parameters | Return Type | Purpose |
+| :--- | :--- | :--- | :--- |
+| `init(apiKey, projectId)` | `apiKey: String`, `projectId: String` | `Void` | Initializes the SDK context with project credentials and configures backend routing paths. |
+| `setUserId(userId)` | `userId: String` | `Void` | Binds an authenticated user identity string to all subsequent logged analytical events. |
+| `clearUserId()` | `None` | `Void` | Clears the active user session identity upon user sign-out or session expiration. |
+| `trackEvent(eventName, metadata)` | `eventName: String`, `metadata: Object` | `Void` | Main tracking interface. Evaluates connection state to either instantly transmit or queue data. |
 
-'''
+### 2. Private/Internal Methods
+These routines run internal synchronization logic and are prefixed with an underscore (`_`) by convention to prevent accidental execution by host apps.
 
-
-
-
-
+| Method Signature | Trigger Condition | Internal Action |
+| :--- | :--- | :--- |
+| `_checkNetworkStatus()` | Invoked inside tracking pipeline | Executes a lightweight navigator ping to dynamically switch between online and offline state machines. |
+| `_saveToCache(event)` | Automated when offline state is active | Serializes the event payload string and pushes it into the client browser's `localStorage` array queue. |
+| `_flushCache()` | Triggered by window `online` lifecycle event | Reads queued payload arrays, clears `localStorage`, and forwards a compiled single bulk JSON transmission. |
 
