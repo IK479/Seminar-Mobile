@@ -121,6 +121,8 @@ sequenceDiagram
         API-->>SDK: 200 OK / Success
     end
 ```
+
+Performance & Algorithmic EfficiencyTo prevent full collection scans ($O(N)$) as the database scales into millions of analytical events, the system utilizes a targeted Compound Index configuration on the underlying collection schema:$$\text{Index} = \{ \text{projectId}: 1, \text{timestamp}: -1 \}$$Query Performance MatrixIndex Lookup Efficiency: $O(\log M + K)$ where $M$ is the total number of items stored under the collection index tree structure, and $K$ is the explicit count of matched events fetched for runtime calculations.Write Throughput Performance: Constant time execution bounded at $O(1)$ efficiency via automated internal SDK bulk batch array forwarding arrays.
                                      
 ## API Endpoints
 
