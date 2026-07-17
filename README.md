@@ -121,9 +121,17 @@ sequenceDiagram
         API-->>SDK: 200 OK / Success
     end
 ```
+## Database Operations Complexity Matrix
 
-Performance & Algorithmic EfficiencyTo prevent full collection scans ($O(N)$) as the database scales into millions of analytical events, the system utilizes a targeted Compound Index configuration on the underlying collection schema:$$\text{Index} = \{ \text{projectId}: 1, \text{timestamp}: -1 \}$$Query Performance MatrixIndex Lookup Efficiency: $O(\log M + K)$ where $M$ is the total number of items stored under the collection index tree structure, and $K$ is the explicit count of matched events fetched for runtime calculations.Write Throughput Performance: Constant time execution bounded at $O(1)$ efficiency via automated internal SDK bulk batch array forwarding arrays.
-                                     
+To guarantee real-time performance and high throughput, the backend data layer constraints are optimized to maintain tight algorithmic bounds across predictable collection growth scales.
+
+| Database Operation | Target Query / Method | Algorithmic Complexity | Optimization Strategy |
+| :--- | :--- | :--- | :--- |
+| **Event Ingestion (Write)** | `POST /api/v1/events` | $O(1)$ | Handled via B-Tree index append and asynchronous bulk batch array routing, avoiding runtime locks. |
+| **Targeted Metric Ingestion (Read)** | `GET /projects/:projectId/stats` | $O(\log M + K)$ | Utilizes the compound index tree lookup path over `{ projectId: 1, timestamp: -1 }` instead of an $O(N)$ full collection scan. |
+| **Live Stream Aggregation** | WebSocket Server Broadcast | $O(1)$ | In-memory operational event mirroring via Socket.io bypassing physical disk read bottlenecks during live tracking. |
+| **Device Breakdown Matrix** | `GET /.../advanced-analytics` | $O(M)$ | Scans only the filtered subset documents ($M$) matching the active `projectId` using indexing bounds, rather than the entire collection. |
+
 ## API Endpoints
 
 All backend routes are hosted under the base URL pipeline: `http://localhost:5000/api/v1`.
