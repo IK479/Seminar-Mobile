@@ -169,6 +169,13 @@ These routines run internal synchronization logic and are prefixed with an under
 | `_saveToCache(event)` | Automated when offline state is active | Serializes the event payload string and pushes it into the client browser's `localStorage` array queue. |
 | `_flushCache()` | Triggered by window `online` lifecycle event | Reads queued payload arrays, clears `localStorage`, and forwards a compiled single bulk JSON transmission. |
 
+# Screenshots
+
+## client Side Application
+<img width="480" height="497" alt="client side image" src="https://github.com/user-attachments/assets/aefa953b-a25d-4f7f-889b-2d6c73635651" />
+
+## Portal Application
+<img width="477" height="385" alt="portal image" src="https://github.com/user-attachments/assets/7fc573e3-2e3b-4041-a112-57447f9a05cc" />
 
 
 https://github.com/user-attachments/assets/516076f6-022e-43a5-b363-d17c5594cda2
