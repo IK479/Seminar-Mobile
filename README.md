@@ -101,19 +101,19 @@ sequenceDiagram
     participant API as Backend API / MongoDB
 
     App->>SDK: trackEvent(eventName, metadata)
-    Note over SDK: checkNetworkStatus()
+    Note over SDK: Check Network Status
 
-    alt Status: Online (מצב מקוון)
+    alt Dynamic Status is Online
         SDK->>API: Transmit Event Payload (POST)
         Note over API: O(log M + K) Index Lookup
         API-->>SDK: 200 OK / Success
         SDK-->>App: Event Tracked Successfully
-    else Status: Offline (מצב לא מקוון)
+    else Dynamic Status is Offline
         SDK->>Cache: _saveToCache(event)
         Cache-->>SDK: Saved to Queue
-        SDK-->>App: Event Queued (Offline)
+        SDK-->>App: Event Queued (Offline Mode)
         
-        Note over SDK: Network Restored (Window 'online')
+        Note over SDK: Network Restored (Window Online)
         SDK->>SDK: _flushCache()
         SDK->>Cache: Read & Clear Queued Events
         Cache-->>SDK: Return Bulk Payload
