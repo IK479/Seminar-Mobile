@@ -67,23 +67,6 @@ analytics.trackEvent("task_created", {
 
 // Clear user session upon logging out
 analytics.clearUserId();
-
-// Initialize the SDK with your Project ID and API Key
-const projectId = "productivity_app_2026";
-analytics.init("my_secret_api_key_123", projectId);
-
-// Identify an authenticated user session
-analytics.setUserId("user_ido_katz");
-
-// Track custom analytical events with dynamic parameters
-analytics.trackEvent("task_created", {
-    task_name: "Complete Project README",
-    difficulty: "Medium"
-});
-
-// Clear user session upon logging out
-analytics.clearUserId();
-
 ```
 
 # Architecture
