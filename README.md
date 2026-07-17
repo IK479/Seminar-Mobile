@@ -89,6 +89,37 @@ analytics.clearUserId();
 # Architecture
 <img src="https://github.com/user-attachments/assets/ec00d2eb-57b1-4dcc-af68-d9a898190181" alt="System Architecture Diagram" width="100%">                         
 
+
+### Event Processing Workflow (Online vs. Offline)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor App as Host Application
+    participant SDK as Analytics SDK
+    participant Cache as LocalStorage (Cache)
+    participant API as Backend API / MongoDB
+
+    App->>SDK: trackEvent(eventName, metadata)
+    Note over SDK: checkNetworkStatus()
+
+    alt Status: Online (מצב מקוון)
+        SDK->>API: Transmit Event Payload (POST)
+        Note over API: O(log M + K) Index Lookup
+        API-->>SDK: 200 OK / Success
+        SDK-->>App: Event Tracked Successfully
+    else Status: Offline (מצב לא מקוון)
+        SDK->>Cache: _saveToCache(event)
+        Cache-->>SDK: Saved to Queue
+        SDK-->>App: Event Queued (Offline)
+        
+        Note over SDK: Network Restored (Window 'online')
+        SDK->>SDK: _flushCache()
+        SDK->>Cache: Read & Clear Queued Events
+        Cache-->>SDK: Return Bulk Payload
+        SDK->>API: Transmit Bulk JSON Payload
+        API-->>SDK: 200 OK / Success
+    end
                                                           
 ## API Endpoints
 
