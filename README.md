@@ -120,7 +120,7 @@ sequenceDiagram
         SDK->>API: Transmit Bulk JSON Payload
         API-->>SDK: 200 OK / Success
     end
-'''
+```
                                      
 ## API Endpoints
 
