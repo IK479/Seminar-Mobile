@@ -93,33 +93,11 @@ analytics.clearUserId();
 ### Event Processing Workflow (Online vs. Offline)
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor App as Host Application
-    participant SDK as Analytics SDK
-    participant Cache as LocalStorage (Cache)
-    participant API as Backend API / MongoDB
-
-    App->>SDK: trackEvent(eventName, metadata)
-    Note over SDK: Check Network Status
-
-    alt Dynamic Status is Online
-        SDK->>API: Transmit Event Payload (POST)
-        Note over API: O(log M + K) Index Lookup
-        API-->>SDK: 200 OK / Success
-        SDK-->>App: Event Tracked Successfully
-    else Dynamic Status is Offline
-        SDK->>Cache: _saveToCache(event)
-        Cache-->>SDK: Saved to Queue
-        SDK-->>App: Event Queued (Offline Mode)
-        
-        Note over SDK: Network Restored (Window Online)
-        SDK->>SDK: _flushCache()
-        SDK->>Cache: Read & Clear Queued Events
-        Cache-->>SDK: Return Bulk Payload
-        SDK->>API: Transmit Bulk JSON Payload
-        API-->>SDK: 200 OK / Success
-    end
+graph TD
+    ClientApp[Host Application] -->|Uses| SDK[Analytics SDK]
+    SDK -->|Offline Cache| LocalStorage[(LocalStorage)]
+    SDK -->|HTTP POST Bulk/Single| ExpressAPI[Express/Node.js Backend]
+    ExpressAPI -->|Optimized Write| MongoDB[(MongoDB)]
                                                           
 ## API Endpoints
 
