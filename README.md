@@ -107,6 +107,41 @@ sequenceDiagram
         API-->>SDK: 200 OK / Success
     end
 ```
+
+### SDK Operational State Diagram
+
+The following state machine describes the internal lifecycle of the Client SDK, managing state transitions based on API initialization and network connectivity status:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Uninitialized : Application Load
+    
+    Uninitialized --> Initialized : analytics.init(apiKey, projectId)
+    
+    state Initialized {
+        [*] --> CheckingNetwork
+        
+        CheckingNetwork --> OnlineState : Navigator Online
+        CheckingNetwork --> OfflineState : Navigator Offline
+        
+        state OnlineState {
+            [*] --> Idle_Online
+            Idle_Online --> TransmittingBatch : trackEvent() triggered
+            TransmittingBatch --> Idle_Online : 200 OK / Queue Flushed
+        }
+        
+        state OfflineState {
+            [*] --> Idle_Offline
+            Idle_Offline --> CachingEvent : trackEvent() triggered
+            CachingEvent --> Idle_Offline : Serialized to LocalStorage
+        }
+        
+        OnlineState --> OfflineState : 'offline' Window Event
+        OfflineState --> OnlineState : 'online' Window Event / Trigger _flushCache()
+    }
+    
+    Initialized --> Uninitialized : analytics.clearUserId() / Reset
+```
 ## Database Operations Complexity Matrix
 
 To guarantee real-time performance and high throughput, the backend data layer constraints are optimized to maintain tight algorithmic bounds across predictable collection growth scales.
