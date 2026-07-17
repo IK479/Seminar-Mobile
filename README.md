@@ -15,16 +15,28 @@ The project is an Analytics SDK – a lightweight, easy-to-integrate client-side
 
 
 # Technology Stack
-SDK: Vanilla JavaScript (ES6+).
-Offline Cache: HTML5 localStorage.
-Network: Native Fetch API & Network Listeners.
-Backend: Node.js + Express.js.
-Real-Time Data: Socket.io (WebSockets).
-Database: MongoDB Atlas.
-Database ODM: Mongoose.
-Portal UI: Vanilla HTML5, CSS3, & JS.
-Charts: Chart.js.  
+
+| Component | Technology Used | Description / Purpose |
+| :--- | :--- | :--- |
+| **SDK Core** | Vanilla JavaScript (ES6+) | Zero-dependency, lightweight implementation |
+| **Offline Cache** | HTML5 `localStorage` | Client-side queueing for robust offline persistence |
+| **Network** | Fetch API & Web Listeners | Asynchronous batch transmissions & network status checks |
+| **Backend** | Node.js + Express.js | Asynchronous REST API routing & validation middleware |
+| **Real-Time Data** | Socket.io (WebSockets) | Instant data push from server to developer portal |
+| **Database** | MongoDB Atlas | High-throughput cloud document store for raw metrics |
+| **Database ODM** | Mongoose | Schema definitions, indexing, and complex aggregations |
+| **Portal UI** | Vanilla HTML5 + CSS3 + JS | Lightweight, high-performance monitoring dashboard |
+| **Charts** | Chart.js | Hardware-accelerated interactive metrics rendering |
 
 
+
+## Data Structures
+
+| Structure Name | Component | Type | Description / Key Fields |
+| :--- | :--- | :--- | :--- |
+| **Standard Event Object** | Client SDK | JavaScript Object | Formatted payload containing: `projectId`, `eventName`, `userId`, `timestamp`, dynamic custom `properties`, and automated client `metadata`[cite: 1]. |
+| **Local Cache Queue** | Client SDK | JSON Array | A serialized list of standard event objects saved in `localStorage` when client status is offline[cite: 1]. |
+| **Database Schema** | Backend Server | Mongoose / MongoDB Document | Persisted server document defining structural constraints for event logging, with an optimized index on `{ projectId: 1, timestamp: -1 }`[cite: 7]. |
+| **Clean Crash Payload** | Client / Server | JSON Object | A dedicated diagnostic payload embedded within `properties` containing: `error_message`, crashing `component`, and the exact code `line` number. |
 
 
