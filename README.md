@@ -46,7 +46,7 @@ Follow these steps to integrate the Analytics SDK into your web application.
 
 ### 1. Client-Side Integration (SDK Implementation)
 
-Include the `analytics-sdk.js` file into your project structure and load it at the top of your main HTML file[cite: 3]:
+Include the `analytics-sdk.js` file into your project structure and load it at the top of your main HTML file:
 
 ```html
 <!-- Load the Analytics SDK library -->
@@ -99,26 +99,50 @@ analytics.clearUserId();
 └────────────────────────┘                                    │        Database        │
                                                               │    (MongoDB Atlas)     │
                                                               └────────────────────────┘
-
-# Endpoints
-
 ## API Endpoints
 
-All backend routes are hosted under the base URL pipeline: `http://localhost:5000/api/v1`[cite: 1, 7].
+All backend routes are hosted under the base URL pipeline: `http://localhost:5000/api/v1`.
 
-### Authentication
-*   **Protected Routes:** Endpoints marked with **Yes** require a valid `x-api-key` header containing the unique project credential token to authenticate the client SDK request[cite: 7].
-
-| HTTP Method | Route Endpoint | API Key Required? | Description / Response Output |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/events`[cite: 7] | **Yes**[cite: 7] | Receives bulk event packages from the SDK, executes an optimized bulk database insert (`insertMany`), and streams records live to the developer portal via WebSockets[cite: 7]. |
-| `GET` | `/projects/:projectId/events`[cite: 7] | No | Fetches the 100 most recent chronological events filtered by project identity to populate the developer portal log stream view[cite: 7]. |
-| `GET` | `/projects/:projectId/stats`[cite: 7] | No | Computes a fast indexed database aggregation summarizing total counts broken down per distinct event name for the distribution charts[cite: 7]. |
-| `GET` | `/projects/:projectId/active-tasks`[cite: 3, 7] | No | Analyzes task creation vs completion events via server aggregation to return non-completed historical tasks, ensuring dashboard state persistence upon page reload[cite: 3, 7]. |
-| `GET` | `/projects/:projectId/advanced-analytics`[cite: 7] | No | Runs complex user-journey analytics calculations to return conversion funnel metrics and user task execution duration trends[cite: 7]. |
-| `GET` | `/projects/:projectId/hourly-distribution`[cite: 7] | No | Aggregates and yields event frequency counts grouped into 24 hour slots for user-activity heatmap charting[cite: 7]. |
+| HTTP Method | Route Endpoint | API Key Required? |
+| :--- | :--- | :--- |
+| `POST` | `/events` | **Yes** |
+| `GET` | `/projects/:projectId/events` | No |
+| `GET` | `/projects/:projectId/stats` | No |
+| `GET` | `/projects/:projectId/active-tasks` | No |
+| `GET` | `/projects/:projectId/advanced-analytics` | No |
+| `GET` | `/projects/:projectId/hourly-distribution` | No |
 
 
+
+## System Sequence Diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    actor App as Developer App
+    participant SDK as Client SDK
+    participant DB as LocalStorage
+    participant API as Server API
+    participant Portal as Developer Portal
+
+    App->>SDK: trackEvent("init")
+    SDK->>SDK: Check Network Status
+    
+    alt Device is Online
+        SDK->>API: POST /api/v1/events (Single/Batch)
+        API-->>SDK: 201 Created
+        API)->>Portal: io.emit("new-event")
+    else Device is Offline
+        SDK->>DB: saveToCache(event)
+    end
+
+    Note over SDK, DB: When network connection is restored...
+    SDK->>SDK: window:online Detected
+    SDK->>DB: flushCache()
+    DB-->>SDK: Read Array & Clear Cache
+    SDK->>API: POST /api/v1/events (Bulk JSON Payload)
+    API)->>Portal: io.emit("bulk-sync")
+
+'''
 
 
 
