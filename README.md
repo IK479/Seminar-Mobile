@@ -84,8 +84,20 @@ analytics.trackEvent("task_created", {
 // Clear user session upon logging out
 analytics.clearUserId();
 
+# Architecture
+<img width="1376" height="768" alt="Gemini_Generated_Image_vvqrf4vvqrf4vvqr" src="https://github.com/user-attachments/assets/4d0f0659-56f3-48c9-b443-e34b533edf0d" />
 
-<img width="1376" height="768" alt="Gemini_Generated_Image_vvqrf4vvqrf4vvqr" src="https://github.com/user-attachments/assets/898bde5c-a62f-4e15-ab24-bef7368ad380" />
+┌────────────────────────┐      HTTP POST (Batch / JSON)      ┌────────────────────────┐
+│     Developer App      ├───────────────────────────────────►│       Server API       │
+│  (Client SDK + Cache)  │◄──────────────────────────────────┤    (Node.js/Express)   │
+└────────────────────────┘             WebSockets             └───────────┬────────────┘
+                                      (Socket.io)                         │
+┌────────────────────────┐                 ▲                              │ Mongoose ORM
+│    Developer Portal    │─────────────────┘                              ▼
+│  (Dashboard UI & Live) │                                    ┌────────────────────────┐
+└────────────────────────┘                                    │        Database        │
+                                                              │    (MongoDB Atlas)     │
+                                                              └────────────────────────┘
 
 
 
