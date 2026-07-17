@@ -136,6 +136,24 @@ All backend routes are hosted under the base URL pipeline: `http://localhost:500
 
 The Client SDK architecture strictly isolates its external integration interface from internal lifecycle management routines.
 
+## System & Developer Portal Components Overview
+
+The system architecture is divided into clear functional components to isolate core data ingestion pipelines from user management and live analytics reporting.
+
+| Component Layer | Module Name | Primary Purpose & Technical Role |
+| :--- | :--- | :--- |
+| **Client-Side SDK** | **Public API Core** | Exposes the external developer interface (`init`, `trackEvent`, `setUserId`, `clearUserId`) to manage the SDK lifecycle. |
+| | **Network Monitor** | Automatically listens to browser connectivity status changes to toggle between online and offline operational states. |
+| | **Offline Cache Queue** | Intercepts payloads when offline, serializing and stacking events into `localStorage` before executing a bulk flush on reconnection. |
+| **Backend Engine** | **REST API Ingestion** | Hosts the high-throughput endpoints, handles routing validation middlewares, and verifies secure project API keys. |
+| | **Database Storage** | Persists events into MongoDB utilizing a specialized compound index `{ projectId: 1, timestamp: -1 }` to secure $O(\log M + K)$ lookup speeds. |
+| | **Real-Time Broadcaster** | Orchestrates live event mirroring by immediately transmitting newly ingested data via Socket.io, bypassing disk bottlenecks. |
+| **Developer Portal** | **Authentication & Project Guard** | Secures dashboard access, ensuring developers can only fetch and display metrics tied to authorized project tokens. |
+| | **Live Stream Dashboard** | Connects to active WebSockets rooms to pipe real-time events straight into the browser DOM without requiring page refreshes. |
+| | **Crash Diagnostic Logger** | Parses specialized error payloads into human-readable JSON formats, highlighting failing components and code lines for fast debugging. |
+| | **Analytics Charts Engine** | Aggregates project performance data and draws hardware-accelerated metrics (e.g., hourly distribution, device breakdown) using Chart.js. |
+
+
 ### 1. Public API Methods
 These methods are safely exposed on the global `analytics` instance for host application integration.
 
@@ -155,21 +173,6 @@ These routines run internal synchronization logic and are prefixed with an under
 | `_saveToCache(event)` | Automated when offline state is active | Serializes the event payload string and pushes it into the client browser's `localStorage` array queue. |
 | `_flushCache()` | Triggered by window `online` lifecycle event | Reads queued payload arrays, clears `localStorage`, and forwards a compiled single bulk JSON transmission. |
 
-## System & Developer Portal Components Overview
 
-The system architecture is divided into clear functional components to isolate core data ingestion pipelines from user management and live analytics reporting.
-
-| Component Layer | Module Name | Primary Purpose & Technical Role |
-| :--- | :--- | :--- |
-| **Client-Side SDK** | **Public API Core** | Exposes the external developer interface (`init`, `trackEvent`, `setUserId`, `clearUserId`) to manage the SDK lifecycle. |
-| | **Network Monitor** | Automatically listens to browser connectivity status changes to toggle between online and offline operational states. |
-| | **Offline Cache Queue** | Intercepts payloads when offline, serializing and stacking events into `localStorage` before executing a bulk flush on reconnection. |
-| **Backend Engine** | **REST API Ingestion** | Hosts the high-throughput endpoints, handles routing validation middlewares, and verifies secure project API keys. |
-| | **Database Storage** | Persists events into MongoDB utilizing a specialized compound index `{ projectId: 1, timestamp: -1 }` to secure $O(\log M + K)$ lookup speeds. |
-| | **Real-Time Broadcaster** | Orchestrates live event mirroring by immediately transmitting newly ingested data via Socket.io, bypassing disk bottlenecks. |
-| **Developer Portal** | **Authentication & Project Guard** | Secures dashboard access, ensuring developers can only fetch and display metrics tied to authorized project tokens. |
-| | **Live Stream Dashboard** | Connects to active WebSockets rooms to pipe real-time events straight into the browser DOM without requiring page refreshes. |
-| | **Crash Diagnostic Logger** | Parses specialized error payloads into human-readable JSON formats, highlighting failing components and code lines for fast debugging. |
-| | **Analytics Charts Engine** | Aggregates project performance data and draws hardware-accelerated metrics (e.g., hourly distribution, device breakdown) using Chart.js. |
 
 
