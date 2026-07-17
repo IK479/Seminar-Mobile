@@ -84,8 +84,9 @@ analytics.trackEvent("task_created", {
 // Clear user session upon logging out
 analytics.clearUserId();
 
-# Architecture
-<img width="1376" height="768" alt="Gemini_Generated_Image_vvqrf4vvqrf4vvqr" src="https://github.com/user-attachments/assets/4d0f0659-56f3-48c9-b443-e34b533edf0d" />
+###
+
+Architecture
 
 ┌────────────────────────┐      HTTP POST (Batch / JSON)      ┌────────────────────────┐
 │     Developer App      ├───────────────────────────────────►│       Server API       │
