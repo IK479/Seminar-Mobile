@@ -82,6 +82,46 @@ analytics.trackEvent("task_created", {
 });
 
 // Clear user session upon logging out
+
+
+## System Architecture & Diagrams
+
+### 1. System Architecture Diagram
+The following blueprint demonstrates the real-time data flow between the Client App (embedded with our SDK), the Express Backend, the Cloud Database, and the Reactive Developer Dashboard[cite: 1, 6, 7]:
+
+┌─────────────────────────────────┐        HTTP POST (Batch / JSON)       ┌─────────────────────────────────┐│     Client Developer App        ├──────────────────────────────────────►│        Express API Server       ││  (Isolated SDK Context + Cache) │◄──────────────────────────────────────┤     (Authentication Middleware)  │└─────────────────────────────────┘               WebSockets              └───────────────┬─────────────────┘(Socket.io)                              │┌─────────────────────────────────┐                   ▲                                   │ Mongoose ORM│        Developer Portal         │───────────────────┘                                   ▼│     (Reactive Live Dashboard)   │                                       ┌─────────────────────────────────┐└─────────────────────────────────┘                                       │         Database Storage        ││      (MongoDB Atlas Cluster)    │└─────────────────────────────────┘
+### 2. Event Lifecycle (State Diagram)
+The Client SDK operates deterministically as a state machine based on the host platform's runtime network status[cite: 1]:
+
+             ┌────────────────────────────────┐
+             │          ONLINE STATE          │
+             │  - Direct HTTP Delivery        │
+             │  - Immediate Server Flush      │
+             └──────────────┬─────────────────┘
+                            │
+             Network Drops  │  Network Restored
+              (via Web API) │   (via Web API)
+                            ▼
+             ┌────────────────────────────────┐
+             │         OFFLINE STATE          │
+             │  - Non-blocking Queueing       │
+             │  - localStorage Serialization  │
+             └────────────────────────────────┘
+
+### 3. Sequence Diagram (Online vs. Offline Pipeline)
+This lifecycle trace details how a tracked event is captured, managed under varying connectivity constraints, and propagated to the developer interface[cite: 1, 6, 7]:
+
+Developer App             Client SDK               LocalStorage              Server API            Developer Portal│                       │                         │                        │                        ││── trackEvent("init")─►│                         │                        │                        ││                       │── check Network Status ─►│                        │                        ││                       │                         │                        │                        ││                       │── [If Device Is Online] ────────────────────────►│                        ││                       │                                                  │── io.emit("new-event")►││                       │◄───────────────── 201 Created ───────────────────│                        ││                       │                         │                        │                        ││                       │── [If Device Is Offline]────────────────         │                        ││                       │                         │               │        │                        ││                       │                         │◄──saveToCache─┘        │                        ││                       │                         │                        │                        ││                       │── window:online Detected│                        │                        ││                       │── flushCache() ────────►│                        │                        ││                       │◄─ Read Array & Clear ───│                        │                        ││                       │                         │                        │                        ││                       │── POST /api/v1/events (Bulk JSON Payload) ──────►│                        ││                       │                                                  │── io.emit("bulk-sync")►│
+---
+
+## Database Efficiency & Algorithmic Analysis ($O$ Notation)
+
+To handle intense analytical ingestion workloads and keep server lookups highly performant, our database layer features a specialized **Compound Index** targeting lookups by project identity and reverse chronological order:
+
+```javascript
+// Index strategy optimized for Dashboard Aggregations & Reverse Log Tables
+eventSchema.index({ projectId: 1, timestamp: -1 });
+Algorithmic Efficiency Matrix ($O$-Notation):Component / EndpointDatabase Database LogicTime Complexity Without IndexTime Complexity With Index (Our Strategy)Architectural MotivationBulk Event IngestionPOST /api/v1/events  insertMany(events)  $O(N)$$O(N)$Straightforward sequential write execution into the document collection storage cluster.  Real-Time Log StreamGET /.../:projectId/events  find({ projectId }).sort({ timestamp: -1 })  $O(M \cdot \log M)$$O(\log M) + O(K)$Avoids expensive in-memory collections sorting by matching the b-tree index layout directly.  Analytical AggregationsGET /.../:projectId/stats  aggregate([ { $match }, { $group } ])  $O(M)$$O(\log M) + O(K)$Narrows down search space via fast index bounds prior to calculating analytics groups.  $N$: Number of raw events within the currently transmitted bulk request packet[cite: 7].$M$: Absolute total document mass across the database namespace database entity.$K$: Specific document slice belonging to the indexed matching query parameters.
 analytics.clearUserId();
 
 
