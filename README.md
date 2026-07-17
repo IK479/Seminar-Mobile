@@ -34,9 +34,58 @@ The project is an Analytics SDK – a lightweight, easy-to-integrate client-side
 
 | Structure Name | Component | Type | Description / Key Fields |
 | :--- | :--- | :--- | :--- |
-| **Standard Event Object** | Client SDK | JavaScript Object | Formatted payload containing: `projectId`, `eventName`, `userId`, `timestamp`, dynamic custom `properties`, and automated client `metadata`[cite: 1]. |
-| **Local Cache Queue** | Client SDK | JSON Array | A serialized list of standard event objects saved in `localStorage` when client status is offline[cite: 1]. |
-| **Database Schema** | Backend Server | Mongoose / MongoDB Document | Persisted server document defining structural constraints for event logging, with an optimized index on `{ projectId: 1, timestamp: -1 }`[cite: 7]. |
+| **Standard Event Object** | Client SDK | JavaScript Object | Formatted payload containing: `projectId`, `eventName`, `userId`, `timestamp`, dynamic custom `properties`, and automated client `metadata`. |
+| **Local Cache Queue** | Client SDK | JSON Array | A serialized list of standard event objects saved in `localStorage` when client status is offline. |
+| **Database Schema** | Backend Server | Mongoose / MongoDB Document | Persisted server document defining structural constraints for event logging, with an optimized index on `{ projectId: 1, timestamp: -1 }` |
 | **Clean Crash Payload** | Client / Server | JSON Object | A dedicated diagnostic payload embedded within `properties` containing: `error_message`, crashing `component`, and the exact code `line` number. |
+
+
+## How to Use - Quick Start
+
+Follow these steps to integrate the Analytics SDK into your web application.
+
+### 1. Client-Side Integration (SDK Implementation)
+
+Include the `analytics-sdk.js` file into your project structure and load it at the top of your main HTML file[cite: 3]:
+
+```html
+<!-- Load the Analytics SDK library -->
+<script src="analytics-sdk.js"></script>
+
+// Initialize the SDK with your Project ID and API Key
+const projectId = "productivity_app_2026";
+analytics.init("my_secret_api_key_123", projectId);
+
+// Identify an authenticated user session
+analytics.setUserId("user_ido_katz");
+
+// Track custom analytical events with dynamic parameters
+analytics.trackEvent("task_created", {
+    task_name: "Complete Project README",
+    difficulty: "Medium"
+});
+
+// Clear user session upon logging out
+analytics.clearUserId();
+
+// Initialize the SDK with your Project ID and API Key
+const projectId = "productivity_app_2026";
+analytics.init("my_secret_api_key_123", projectId);
+
+// Identify an authenticated user session
+analytics.setUserId("user_ido_katz");
+
+// Track custom analytical events with dynamic parameters
+analytics.trackEvent("task_created", {
+    task_name: "Complete Project README",
+    difficulty: "Medium"
+});
+
+// Clear user session upon logging out
+analytics.clearUserId();
+
+
+
+
 
 
