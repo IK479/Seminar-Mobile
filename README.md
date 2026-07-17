@@ -87,18 +87,9 @@ analytics.clearUserId();
 ```
 
 # Architecture
+<img src="https://github.com/user-attachments/assets/ec00d2eb-57b1-4dcc-af68-d9a898190181" alt="System Architecture Diagram" width="100%">                         
 
-┌────────────────────────┐      HTTP POST (Batch / JSON)      ┌────────────────────────┐
-│     Developer App      ├───────────────────────────────────►│       Server API       │
-│  (Client SDK + Cache)  │◄──────────────────────────────────┤    (Node.js/Express)   │
-└────────────────────────┘             WebSockets             └───────────┬────────────┘
-                                      (Socket.io)                         │
-┌────────────────────────┐                 ▲                              │ Mongoose ORM
-│    Developer Portal    │─────────────────┘                              ▼
-│  (Dashboard UI & Live) │                                    ┌────────────────────────┐
-└────────────────────────┘                                    │        Database        │
-                                                              │    (MongoDB Atlas)     │
-                                                              └────────────────────────┘
+                                                          
 ## API Endpoints
 
 All backend routes are hosted under the base URL pipeline: `http://localhost:5000/api/v1`.
