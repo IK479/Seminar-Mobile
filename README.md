@@ -84,9 +84,9 @@ analytics.trackEvent("task_created", {
 // Clear user session upon logging out
 analytics.clearUserId();
 
-###
+```
 
-Architecture
+# Architecture
 
 ┌────────────────────────┐      HTTP POST (Batch / JSON)      ┌────────────────────────┐
 │     Developer App      ├───────────────────────────────────►│       Server API       │
