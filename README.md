@@ -3,7 +3,8 @@ The project is an Analytics SDK – a lightweight, easy-to-integrate client-side
 
 # Overview
 https://github.com/user-attachments/assets/516076f6-022e-43a5-b363-d17c5594cda2
-
+# Doc File
+https://docs.google.com/document/d/1iop1GeWBf4d6Fhx-RFA-vtQ94ptpqzjddkGl84VjJwE/edit?tab=t.0#heading=h.4k1qtr41zald
 
 # Features List
 * Real-Time Bulk Ingestion (Batching): Bundles and transmits event packages in batches to prevent network overload (self-DDoS) on the server side and conserve client device resources.
